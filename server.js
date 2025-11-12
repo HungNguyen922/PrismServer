@@ -1,4 +1,3 @@
-// server.js
 import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
@@ -7,44 +6,34 @@ import cors from "cors";
 const app = express();
 app.use(cors());
 const server = createServer(app);
-const io = new Server(server, {
-    cors: {
-        origin: "*", // allow all origins for now
-    },
-});
+const io = new Server(server, { cors: { origin: "*" } });
 
-const games = {}; // store game states by gameId
+const games = {}; // gameId -> current board state
 
 io.on("connection", (socket) => {
-    console.log("A player connected:", socket.id);
+  console.log("Connected:", socket.id);
 
-    socket.on("joinGame", (gameId) => {
-        socket.join(gameId);
-        console.log(`Player ${socket.id} joined game ${gameId}`);
+  socket.on("joinGame", (gameId) => {
+    socket.join(gameId);
+    console.log(`Socket ${socket.id} joined ${gameId}`);
 
-        // Create game if not existing
-        if (!games[gameId]) {
-            games[gameId] = {
-                players: {},
-                state: {}, // you can fill in whatever structure you want here
-            };
-        }
+    // If no game yet, create empty sandbox state
+    if (!games[gameId]) games[gameId] = { board: {}, hands: {}, decks: {} };
 
-        // Send current state back to player
-        io.to(gameId).emit("gameState", games[gameId].state);
-    });
+    // Send current state to new player
+    socket.emit("gameState", games[gameId]);
+  });
 
-    socket.on("updateGame", ({ gameId, newState }) => {
-        if (games[gameId]) {
-            games[gameId].state = newState;
-            io.to(gameId).emit("gameState", newState); // broadcast to everyone in that game
-        }
-    });
+  socket.on("updateGame", ({ gameId, newState }) => {
+    // Replace the state and broadcast to all players in the same room
+    games[gameId] = newState;
+    io.to(gameId).emit("gameState", newState);
+  });
 
-    socket.on("disconnect", () => {
-        console.log("Player disconnected:", socket.id);
-    });
+  socket.on("disconnect", () => {
+    console.log("Disconnected:", socket.id);
+  });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`Server running on ${PORT}`));
