@@ -25,7 +25,15 @@ io.on("connection", (socket) => {
 
   socket.on("joinGame", (gameId) => {
     socket.join(gameId);
-    if (!games[gameId]) games[gameId] = { slots: {}, players: {} };
+    if (!games[gameId]) {
+      games[gameId] = {
+        slots: {},       // field slots
+        players: {},     // player info (optional)
+        decks: {},       // individual player decks
+        hands: {}        // optional: individual hands
+      };
+    }
+
     console.log(`Player ${socket.id} joined room ${gameId}`);
     io.to(socket.id).emit("gameState", games[gameId]); // send current state only to new player
   });
