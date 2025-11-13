@@ -1,60 +1,48 @@
 import express from "express";
-import { createServer } from "http";
+import http from "http";
 import { Server } from "socket.io";
 import cors from "cors";
 
 const app = express();
-
-// 👇 1️⃣ Allow your front-end’s domain to connect
 app.use(cors({
-  origin: ["https://hungnguyen922.github.io"], // your GitHub Pages URL
-  methods: ["GET", "POST"],
-  credentials: true
+  origin: ["https://hungnguyen922.github.io"], // your front-end domain
+  methods: ["GET", "POST"]
 }));
 
-const server = createServer(app);
-
-// 👇 2️⃣ Apply same CORS config to Socket.io
+const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: ["https://hungnguyen922.github.io"], // must match exactly
-    methods: ["GET", "POST"],
-    credentials: true
+    origin: ["https://hungnguyen922.github.io"],
+    methods: ["GET", "POST"]
   }
 });
 
-const games = {}; // gameId -> current board state
+// store all active games in memory
+const games = {};
 
 io.on("connection", (socket) => {
-  console.log("Connected:", socket.id);
+  console.log("Player connected:", socket.id);
 
   socket.on("joinGame", (gameId) => {
     socket.join(gameId);
-    console.log(`Socket ${socket.id} joined ${gameId}`);
-
-    // If no game yet, create empty sandbox state
-    if (!games[gameId]) {
-      games[gameId] = {
-        slots: {},
-        hands: {},
-        decks: {}
-      };
-    }
-
-    // Send current state to new player
-    io.to(gameId).emit("gameState", games[gameId]);
+    if (!games[gameId]) games[gameId] = { slots: {}, players: {} };
+    console.log(`Player ${socket.id} joined room ${gameId}`);
+    io.to(socket.id).emit("gameState", games[gameId]); // send current state only to new player
   });
 
   socket.on("updateGame", ({ gameId, newState }) => {
-    // Replace the state and broadcast to all players in the same room
-    games[gameId] = newState;
-    io.to(gameId).emit("gameState", newState);
+    if (!games[gameId]) return;
+    // merge new state into existing one
+    games[gameId] = { ...games[gameId], ...newState };
+
+    // broadcast updated state to *everyone* in the room (including sender)
+    io.to(gameId).emit("gameState", games[gameId]);
   });
 
   socket.on("disconnect", () => {
-    console.log("Disconnected:", socket.id);
+    console.log("Player disconnected:", socket.id);
   });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Server running on ${PORT}`));
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
