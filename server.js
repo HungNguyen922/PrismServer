@@ -4,9 +4,24 @@ import { Server } from "socket.io";
 import cors from "cors";
 
 const app = express();
-app.use(cors());
+
+// 👇 1️⃣ Allow your front-end’s domain to connect
+app.use(cors({
+  origin: ["https://hungnguyen922.github.io"], // your GitHub Pages URL
+  methods: ["GET", "POST"],
+  credentials: true
+}));
+
 const server = createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
+
+// 👇 2️⃣ Apply same CORS config to Socket.io
+const io = new Server(server, {
+  cors: {
+    origin: ["https://hungnguyen922.github.io"], // must match exactly
+    methods: ["GET", "POST"],
+    credentials: true
+  }
+});
 
 const games = {}; // gameId -> current board state
 
