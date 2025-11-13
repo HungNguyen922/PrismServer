@@ -33,7 +33,13 @@ io.on("connection", (socket) => {
     console.log(`Socket ${socket.id} joined ${gameId}`);
 
     // If no game yet, create empty sandbox state
-    if (!games[gameId]) games[gameId] = { board: {}, hands: {}, decks: {} };
+    if (!games[gameId]) {
+      games[gameId] = {
+        slots: {},
+        hands: {},
+        decks: {}
+      };
+    }
 
     // Send current state to new player
     socket.emit("gameState", games[gameId]);
