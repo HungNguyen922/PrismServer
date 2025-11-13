@@ -42,7 +42,7 @@ io.on("connection", (socket) => {
     }
 
     // Send current state to new player
-    socket.emit("gameState", games[gameId]);
+    io.to(gameId).emit("gameState", games[gameId]);
   });
 
   socket.on("updateGame", ({ gameId, newState }) => {
