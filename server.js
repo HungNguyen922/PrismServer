@@ -23,19 +23,20 @@ const games = {};
 io.on("connection", (socket) => {
   console.log("Player connected:", socket.id);
 
-  socket.on("joinGame", (gameId) => {
+  socket.on("joinGame", (gameId, playerDeck) => {
     socket.join(gameId);
     if (!games[gameId]) {
-      games[gameId] = {
-        slots: {},       // field slots
-        players: {},     // player info (optional)
-        decks: {},       // individual player decks
-        hands: {}        // optional: individual hands
-      };
+      games[gameId] = { slots: {}, players: {}, decks: {}, hands: {} };
     }
-
+  
+    // Assign this player's deck (array of cards)
+    games[gameId].decks[socket.id] = playerDeck || [];
+  
+    // Optionally initialize their hand
+    games[gameId].hands[socket.id] = [];
+  
     console.log(`Player ${socket.id} joined room ${gameId}`);
-    io.to(socket.id).emit("gameState", games[gameId]); // send current state only to new player
+    io.to(socket.id).emit("gameState", games[gameId]); // send full state to new player
   });
 
   socket.on("updateGame", ({ gameId, newState }) => {
