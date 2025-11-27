@@ -42,7 +42,16 @@ io.on("connection", (socket) => {
   socket.on("updateGame", ({ gameId, newState }) => {
     if (!games[gameId]) return;
     // merge new state into existing one
-    games[gameId] = { ...games[gameId], ...newState };
+    Object.keys(newState).forEach(key => {
+      if (typeof newState[key] === "object" && !Array.isArray(newState[key])) {
+        games[gameId][key] = {
+          ...games[gameId][key],
+          ...newState[key]
+        };
+      } else {
+        games[gameId][key] = newState[key];
+      }
+    });;
 
     // broadcast updated state to *everyone* in the room (including sender)
     io.to(gameId).emit("gameState", games[gameId]);
