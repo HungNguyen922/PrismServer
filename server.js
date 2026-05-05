@@ -51,9 +51,9 @@ io.on("connection", (socket) => {
   
     const state = games[gameId];
   
-    // Merge slots
+    // Replaces slots
     if (patch.slots) {
-      state.slots = { ...state.slots, ...patch.slots };
+      state.slots = patch.slots;
     }
   
     // Merge hands
