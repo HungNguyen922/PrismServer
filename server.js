@@ -47,23 +47,34 @@ io.on("connection", (socket) => {
 
   socket.on("updateState", ({ gameId, patch }) => {
     if (!games[gameId]) return;
-
-    // merge patch into game state
-    Object.keys(patch).forEach(key => {
-      if (typeof patch[key] === "object" && !Array.isArray(patch[key])) {
-        games[gameId][key] = {
-          ...games[gameId][key],
-          ...patch[key]
-        };
-      } else {
-        games[gameId][key] = patch[key];
-      }
-    });
-
-    io.to(gameId).emit("gameState", games[gameId]);
-});
-
-
+  
+    const state = games[gameId];
+  
+    // Merge slots
+    if (patch.slots) {
+      state.slots = { ...state.slots, ...patch.slots };
+    }
+  
+    // Merge hands
+    if (patch.hands) {
+      Object.keys(patch.hands).forEach(pid => {
+        state.hands[pid] = patch.hands[pid];
+      });
+    }
+  
+    // Replace draw pile
+    if (patch.drawPile) {
+      state.drawPile = patch.drawPile.slice();
+    }
+  
+    // Replace extra deck
+    if (patch.extraDeck) {
+      state.extraDeck = patch.extraDeck.slice();
+    }
+  
+    io.to(gameId).emit("gameState", state);
+  });
+  
   socket.on("disconnect", () => {
     console.log("Player disconnected:", socket.id);
   });
