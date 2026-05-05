@@ -31,7 +31,8 @@ io.on("connection", (socket) => {
         players: {}, 
         decks: {}, 
         hands: {}, 
-        drawPile: [] 
+        drawPile: [],
+        extraDeck: []
       };
     }
   
