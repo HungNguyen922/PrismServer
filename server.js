@@ -26,7 +26,13 @@ io.on("connection", (socket) => {
   socket.on("joinGame", (gameId, playerDeck) => {
     socket.join(gameId);
     if (!games[gameId]) {
-      games[gameId] = { slots: {}, players: {}, decks: {}, hands: {} };
+      games[gameId] = { 
+        slots: {}, 
+        players: {}, 
+        decks: {}, 
+        hands: {}, 
+        drawPile: [] 
+      };
     }
   
     // Assign this player's deck (array of cards)
@@ -39,23 +45,24 @@ io.on("connection", (socket) => {
     io.to(socket.id).emit("gameState", games[gameId]); // send full state to new player
   });
 
-  socket.on("updateGame", ({ gameId, newState }) => {
+  socket.on("updateState", ({ gameId, patch }) => {
     if (!games[gameId]) return;
-    // merge new state into existing one
-    Object.keys(newState).forEach(key => {
-      if (typeof newState[key] === "object" && !Array.isArray(newState[key])) {
+
+    // merge patch into game state
+    Object.keys(patch).forEach(key => {
+      if (typeof patch[key] === "object" && !Array.isArray(patch[key])) {
         games[gameId][key] = {
           ...games[gameId][key],
-          ...newState[key]
+          ...patch[key]
         };
       } else {
-        games[gameId][key] = newState[key];
+        games[gameId][key] = patch[key];
       }
-    });;
+    });
 
-    // broadcast updated state to *everyone* in the room (including sender)
     io.to(gameId).emit("gameState", games[gameId]);
-  });
+});
+
 
   socket.on("disconnect", () => {
     console.log("Player disconnected:", socket.id);
